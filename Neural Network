@@ -1,0 +1,64 @@
+# Step 1: Import Libraries
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.metrics import accuracy_score, confusion_matrix
+import matplotlib.pyplot as plt
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout
+
+# Step 2: Load Dataset
+dataset = pd.read_csv("Churn_Modelling.csv")
+print(dataset.head())
+
+# Step 3: Feature and Target Selection
+X = dataset.iloc[:, 3:13]   # Select columns from CreditScore to EstimatedSalary
+y = dataset.iloc[:, 13]     # Target column (Exited)
+
+# Encode categorical features
+le_gender = LabelEncoder()
+X['Gender'] = le_gender.fit_transform(X['Gender'])
+
+# One-hot encode Geography column
+X = pd.get_dummies(X, columns=['Geography'], drop_first=True)
+
+# Step 4: Split dataset into training and testing
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Step 5: Normalize the data
+sc = StandardScaler()
+X_train = sc.fit_transform(X_train)
+X_test = sc.transform(X_test)
+
+# Step 6: Build the Neural Network
+model = Sequential()
+model.add(Dense(6, activation='relu', input_dim=X_train.shape[1]))
+model.add(Dropout(0.3))  # helps prevent overfitting
+model.add(Dense(6, activation='relu'))
+model.add(Dense(1, activation='sigmoid'))  # output layer
+
+# Step 7: Compile the Model
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+# Step 8: Train the Model
+history = model.fit(X_train, y_train, epochs=20, batch_size=32, validation_data=(X_test, y_test))
+
+# Step 9: Evaluate the Model
+y_pred = (model.predict(X_test) > 0.5)
+
+# Print accuracy and confusion matrix
+accuracy = accuracy_score(y_test, y_pred)
+cm = confusion_matrix(y_test, y_pred)
+print("\nFinal Accuracy: {:.2f}%".format(accuracy * 100))
+print("\nConfusion Matrix:\n", cm)
+
+# Step 10: Plot Accuracy vs Epochs
+plt.plot(history.history['accuracy'], label='Training Accuracy')
+plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+plt.title('Model Accuracy per Epoch')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.legend()
+plt.show()
+
