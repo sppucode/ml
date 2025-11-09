@@ -1,0 +1,63 @@
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+
+
+
+dataset = pd.read_csv("emails.csv")
+print("Dataset loaded successfully!")
+print(dataset.head())
+
+
+dataset = dataset.drop(columns=['Email No.'])
+
+
+X = dataset.drop('spam', axis=1)   # Features
+y = dataset['spam']                # Target
+
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
+
+
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+
+knn = KNeighborsClassifier(n_neighbors=5)
+knn.fit(X_train_scaled, y_train)
+y_pred_knn = knn.predict(X_test_scaled)
+
+
+svm = SVC(kernel='linear')
+svm.fit(X_train_scaled, y_train)
+y_pred_svm = svm.predict(X_test_scaled)
+
+
+print("\n---- KNN Model Evaluation ----")
+print("Accuracy:", accuracy_score(y_test, y_pred_knn))
+print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred_knn))
+print("Classification Report:\n", classification_report(y_test, y_pred_knn))
+
+
+print("\n---- SVM Model Evaluation ----")
+print("Accuracy:", accuracy_score(y_test, y_pred_svm))
+print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred_svm))
+print("Classification Report:\n", classification_report(y_test, y_pred_svm))
+
+
+acc_knn = accuracy_score(y_test, y_pred_knn)
+acc_svm = accuracy_score(y_test, y_pred_svm)
+
+
+print("\n---- Final Comparison ----")
+print(f"KNN Accuracy: {acc_knn:.4f}")
+print(f"SVM Accuracy: {acc_svm:.4f}")
+if acc_knn > acc_svm:
+    print("KNN performed better on this dataset.")
+else:
+    print("SVM performed better on this dataset.")
