@@ -1,0 +1,101 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error, r2_score
+
+dataset = pd.read_csv("uber.csv")
+print("Initial shape:", dataset.shape)
+
+print(dataset.head())
+
+print("\nNull values before cleaning:\n", dataset.isnull().sum())
+
+dataset = dataset.dropna()
+print("Shape after dropping nulls:", dataset.shape)
+
+def haversine(lon1, lat1, lon2, lat2):
+    # convert decimal degrees to radians
+    lon1, lat1, lon2, lat2 = map(np.radians, [lon1, lat1, lon2, lat2])
+    # haversine formula
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+    a = np.sin(dlat/2)**2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon/2)**2
+    c = 2 * np.arcsin(np.sqrt(a))
+    r = 6371  # Radius of earth in kilometers
+    return c * r
+
+dataset['distance'] = haversine(dataset['pickup_longitude'], dataset['pickup_latitude'],
+                           dataset['dropoff_longitude'], dataset['dropoff_latitude'])
+
+dataset = dataset[['fare_amount', 'distance', 'passenger_count']]
+print("\nDataset after feature selection:\n", dataset.head())
+
+plt.figure(figsize=(6,4))
+sns.boxplot(dataset['fare_amount'])
+plt.title("Boxplot - Fare Amount (Before Removing Outliers)")
+plt.show()  
+
+dataset = dataset[(dataset['fare_amount'] > 0) & (dataset['fare_amount'] < 100)]
+print("Shape after removing outliers:", dataset.shape)
+
+plt.figure(figsize=(5,4))
+sns.heatmap(dataset.corr(), annot=True, cmap='coolwarm')
+plt.title("Correlation Heatmap")
+plt.show()
+
+X = dataset[['distance', 'passenger_count']]
+y = dataset['fare_amount']
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42)
+print("Training samples:", X_train.shape[0])
+print("Testing samples:", X_test.shape[0])
+
+lr = LinearRegression()
+lr.fit(X_train, y_train)
+y_pred_lr = lr.predict(X_test)
+
+rf = RandomForestRegressor(n_estimators=100, random_state=42)
+rf.fit(X_train, y_train)
+y_pred_rf = rf.predict(X_test)
+
+r2_lr = r2_score(y_test, y_pred_lr)
+rmse_lr = np.sqrt(mean_squared_error(y_test, y_pred_lr))
+
+r2_rf = r2_score(y_test, y_pred_rf)
+rmse_rf = np.sqrt(mean_squared_error(y_test, y_pred_rf))
+
+print("\n===== MODEL PERFORMANCE =====")
+print(f"Linear Regression -> R2: {r2_lr:.3f}, RMSE: {rmse_lr:.3f}")
+print(f"Random Forest Regression -> R2: {r2_rf:.3f}, RMSE: {rmse_rf:.3f}")
+
+
+results = pd.DataFrame({
+    'Model': ['Linear Regression', 'Random Forest Regression'],
+    'R2 Score': [r2_lr, r2_rf],
+    'RMSE': [rmse_lr, rmse_rf]
+})
+
+plt.figure(figsize=(6,4))
+sns.barplot(x='Model', y='R2 Score', data=results)
+plt.title("Model Comparison (R² Score)")
+plt.show()
+
+plt.figure(figsize=(6,4))
+sns.barplot(x='Model', y='RMSE', data=results)
+plt.title("Model Comparison (RMSE)")
+plt.show()
+
+
+
+
+
+
+
+
+
+
