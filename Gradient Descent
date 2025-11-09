@@ -1,0 +1,39 @@
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+# Gradient Descent to find local minima of y = (x + 3)^2
+# Function and its derivative
+def f(x):
+    return (x + 3)**2
+def df(x):
+    return 2 * (x + 3)
+# Initialize parameters
+x = 2              # starting point
+learning_rate = 0.1
+iteration = 30        # number of iterations
+x_points = [x]
+tol=0.000006
+# Gradient Descent loop
+for i in range(iteration):
+    x_new = x - learning_rate * df(x)   # update x
+    print(f"Iteration {i+1}: x = {x:.4f}, f(x) = {f(x):.4f}")
+    x_points.append(x_new)
+    if abs(x_new - x) < tol:  # convergence check
+        break
+    x=x_new
+print("\nLocal minima occurs at x =", round(x, 4))
+
+
+# Visualization
+x_vals = np.linspace(-6, 2, 100)
+y_vals = f(x_vals)
+
+
+plt.plot(x_vals, y_vals, label='$y = (x + 3)^2$', color='blue')
+plt.scatter(x_points, f(np.array(x_points)), color='red')  # steps
+plt.title("Gradient Descent on $y = (x + 3)^2$")
+plt.xlabel("x")
+plt.ylabel("y")
+plt.grid(True)
+plt.legend()
+plt.show()
